@@ -10,17 +10,38 @@ sorted_months = sorted(months)
 
 @app.route('/')
 def index():
-    scatter_ranges_query = f'SELECT MIN(X), MAX(X), MIN(Y), MAX(Y) FROM forestfires.csv' # Retrieves the minimum and maximum X and Y coordinates
+    scatter_ranges_query = 'SELECT MIN(X) AS min_x, MAX(X) AS max_x, MIN(Y) AS min_y, MAX(Y) AS max_y FROM "forestfires.csv"'
     scatter_ranges_results = duckdb.sql(scatter_ranges_query).df()
-    scatter_ranges = [0, 0, 0, 0] # TODO: Define a list [minimum of X, maximum of X, minimum of Y, maximum of Y]
+    scatter_ranges = [
+        float(scatter_ranges_results.loc[0, "min_x"]),
+        float(scatter_ranges_results.loc[0, "max_x"]),
+        float(scatter_ranges_results.loc[0, "min_y"]),
+        float(scatter_ranges_results.loc[0, "max_y"]),
+    ]
+  # TODO: Define a list [minimum of X, maximum of X, minimum of Y, maximum of Y]
     
-    max_count_query = 'SELECT * FROM forestfires.csv' # TODO: Write a query that retrieves the maximum number of forest fires that occurred in a single month
+    max_count_query = """
+        SELECT MAX(cnt) AS max_count
+        FROM (
+            SELECT month, COUNT(*) AS cnt
+            FROM "forestfires.csv"
+            GROUP BY month
+        )
+    """ # TODO: Write a query that retrieves the maximum number of forest fires that occurred in a single month
     max_count_results = duckdb.sql(max_count_query).df()
-    max_count = 0 # TODO: Extract the maximum count from the query results
+    max_count =  int(max_count_results.loc[0, "max_count"]) # TODO: Extract the maximum count from the query results
 
-    filter_ranges_query = 'SELECT * FROM forestfires.csv' # TODO: write a query that retrieves the the minimum and maximum value for each slider
+    filter_ranges_query = """
+        SELECT
+            MIN(humidity) AS min_humidity, MAX(humidity) AS max_humidity,
+            MIN(temp)     AS min_temp,     MAX(temp)     AS max_temp,
+            MIN(wind)     AS min_wind,     MAX(wind)     AS max_wind
+        FROM "forestfires.csv"
+    """ # TODO: write a query that retrieves the the minimum and maximum value for each slider
     filter_ranges_results = duckdb.sql(filter_ranges_query).df()
-    filter_ranges = {} # TODO: Create a dictionary where each key is a filter and values are the minimum and maximum values
+    filter_ranges = { "humidity": [float(filter_ranges_results.loc[0, "min_humidity"]), float(filter_ranges_results.loc[0, "max_humidity"])],
+        "temp":     [float(filter_ranges_results.loc[0, "min_temp"]),     float(filter_ranges_results.loc[0, "max_temp"])],
+        "wind":     [float(filter_ranges_results.loc[0, "min_wind"]),     float(filter_ranges_results.loc[0, "max_wind"])],} # TODO: Create a dictionary where each key is a filter and values are the minimum and maximum values
 
     return render_template(
         'index.html', months=months, days=days,
@@ -38,11 +59,17 @@ def update():
     scatter_results = duckdb.sql(scatter_query).df()
     scatter_data = [] # TODO: Extract the data that will populate the scatter plot
 
-    bar_query = f'SELECT * FROM forestfires.csv' # TODO: Write a query that retrieves the number of forest fires per month after filtering
+    bar_query =  f"""
+        SELECT month, COUNT(*) AS count
+        FROM "forestfires.csv"
+        WHERE {predicate}
+        GROUP BY month
+        ORDER BY month
+    """ # TODO: Write a query that retrieves the number of forest fires per month after filtering
     bar_results = duckdb.sql(bar_query).df()
     bar_results['month'] = bar_results.index.map({i: sorted_months[i] for i in range(len(sorted_months))})
-    bar_data = [] # TODO: Extract the data that will populate the bar chart from the results
-    max_count = 0 # TODO: Extract the maximum number of forest fires in a single month from the results
+    bar_data = [bar_results[['month', 'count']].to_dict('records')] # TODO: Extract the data that will populate the bar chart from the results
+    max_count = int(bar_results['count'].max()) if len(bar_results) > 0 else 0 # TODO: Extract the maximum number of forest fires in a single month from the results
 
     return {'scatter_data': scatter_data, 'bar_data': bar_data, 'max_count': max_count}
 

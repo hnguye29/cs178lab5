@@ -68,7 +68,7 @@ function draw_scatter(data, svg, scale){
 
 // TODO: write a function that updates the bar
 function draw_bar(data, svg, scale){
-
+    
 }
 
 // TODO: Write a function that extracts the selected days and minimum/maximum values for each slider
