@@ -51,9 +51,9 @@ def index():
 @app.route('/update', methods=["POST"])
 def update():
     request_data = request.get_json()
-    continuous_predicate = ' AND '.join([f'({column} >= 0 AND {column} <= 0)' for column in continuous_columns]) # TODO: update where clause from sliders
-    discrete_predicate = ' AND '.join([f'{column} IN ()' for column in discrete_columns]) # TODO: update where clause from checkboxes
-    predicate = ' AND '.join([continuous_predicate, discrete_predicate]) # Combine where clause from sliders and checkboxes
+    continuous_predicate =  ' AND '.join([f'({column} >= {request_data[column][0]} AND {column} <= {request_data[column][1]})' for column in continuous_columns])# TODO: update where clause from sliders
+    discrete_predicate = "day IN (" + ",".join("'" + d + "'" for d in request_data['day']) + ")" if len(request_data['day']) > 0 else ""# TODO: update where clause from checkboxes
+    predicate = ' AND '.join([p for p in [continuous_predicate, discrete_predicate] if p != '']) # Combine where clause from sliders and checkboxes
 
     scatter_query = f'SELECT X, Y FROM forestfires.csv WHERE {predicate}'
     scatter_results = duckdb.sql(scatter_query).df()
@@ -68,7 +68,7 @@ def update():
     """ # TODO: Write a query that retrieves the number of forest fires per month after filtering
     bar_results = duckdb.sql(bar_query).df()
     bar_results['month'] = bar_results.index.map({i: sorted_months[i] for i in range(len(sorted_months))})
-    bar_data = [bar_results[['month', 'count']].to_dict('records')] # TODO: Extract the data that will populate the bar chart from the results
+    bar_data = bar_results[['month', 'count']].to_dict('records') # TODO: Extract the data that will populate the bar chart from the results
     max_count = int(bar_results['count'].max()) if len(bar_results) > 0 else 0 # TODO: Extract the maximum number of forest fires in a single month from the results
 
     return {'scatter_data': scatter_data, 'bar_data': bar_data, 'max_count': max_count}
