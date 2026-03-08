@@ -8,13 +8,13 @@
     <script src="static/js/script.js"></script>
 </header>
 <body>
-  <div class = "container">
-    <div style="float: left">
+    <div class="container" style="display:flex; gap:50px; align-items:flex-start;">
+    <div>
       <div><h1>Forest Fires</h1><div id="scatter"></div></div>
       <div><h1>Number of Forest Fires by Month</h1><div id="bar"></div></div>
     </div>
 
-    <div style="float: left; margin-left: 50px;">
+      <div>
       <div id="days" style="margin-top:10px">
         <h3>Day</h3>
         {% for day in days%}

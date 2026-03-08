@@ -83,11 +83,17 @@ def update():
     scatter_data = scatter_results.to_dict(orient='records') 
     
 
-    bar_query = f'SELECT * FROM forestfires.csv' # TODO: Write a query that retrieves the number of forest fires per month after filtering
+    bar_query =  f"""
+        SELECT month, COUNT(*) AS count
+        FROM "forestfires.csv"
+        WHERE {predicate}
+        GROUP BY month
+        ORDER BY month
+    """ # TODO: Write a query that retrieves the number of forest fires per month after filtering
     bar_results = duckdb.sql(bar_query).df()
     bar_results['month'] = bar_results.index.map({i: sorted_months[i] for i in range(len(sorted_months))})
-    bar_data = [] # TODO: Extract the data that will populate the bar chart from the results
-    max_count = 0 # TODO: Extract the maximum number of forest fires in a single month from the results
+    bar_data = bar_results[['month', 'count']].to_dict('records') # TODO: Extract the data that will populate the bar chart from the results
+    max_count = int(bar_results['count'].max()) if len(bar_results) > 0 else 0 # TODO: Extract the maximum number of forest fires in a single month from the results
 
     return {'scatter_data': scatter_data, 'bar_data': bar_data, 'max_count': max_count}
 

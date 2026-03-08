@@ -78,7 +78,16 @@ function draw_scatter(data, svg, scale){
 
 // TODO: write a function that updates the bar
 function draw_bar(data, svg, scale){
-
+    svg.selectAll(".bar")
+        .data(data)
+        .enter()
+        .append("rect")
+        .attr("class", "bar")
+        .attr("x", d => scale.x(d.month))
+        .attr("y", d => scale.y(d.count))
+        .attr("width", scale.x.bandwidth())
+        .attr("height", d => scale.y(0) - scale.y(d.count))
+        .attr("fill", "#4C78A8");
 }
 
 // TODO: Write a function that extracts the selected days and minimum/maximum values for each slider
@@ -106,6 +115,18 @@ function update_scatter(data, svg, scale){
 
 // TODO: Write a function that updates the y-axis, removes the old bars, and redraws the bars
 function update_bar(data, max_count, svg, scale){
+    console.log("bar data:", data)
+    console.log("max count:", max_count)
+
+    scale.y.domain([0, max_count])
+
+    svg.select("." + "bar-yaxis")
+        .remove()
+
+    draw_yaxis("bar", svg, scale.y)
+
+    svg.selectAll(".bar")
+        .remove()
 
     draw_bar(data, svg, scale)
 }
@@ -126,3 +147,5 @@ function update(scatter_svg, bar_svg, scatter_scale, bar_scale){
         update_bar(results['bar_data'], results['max_count'], bar_svg, bar_scale)
     })
 }
+
+
